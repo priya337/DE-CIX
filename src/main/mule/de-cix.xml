@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="6df04e79-6251-4812-8a7a-161efdfec5fb" >
+		<http:listener-connection host="0.0.0.0" port="8084" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="6ea2c5ae-0b41-4feb-9ee5-02c00927ea43">
+		<http:request-connection host="localhost" port="8084" />
+	</http:request-config>
+	<flow name="de-cixFlow" doc:id="2419139a-5606-4122-aa74-0c8189c64ce0" >
+		<http:listener doc:name="Listener for the calls made from Salesforce" doc:id="c219eea3-35fa-46dc-8ae7-b454fb3419d3" config-ref="HTTP_Listener_config" path="/api/erp/debtor-number" outputMimeType="application/json"/>
+	</flow>
+	<flow name="de-cixFlow2" doc:id="874f5368-eb55-484b-88b3-fac6b512a8bf" >
+		<set-payload value="#[payload]" doc:name="Salesforce incoming payload" doc:id="05d14fa2-e994-4a87-9f42-904eff8108ee" mimeType="application/json"/>
+	</flow>
+	<flow name="de-cixFlow3" doc:id="506f7d98-57df-4a1e-beb4-ba06b74c62ea" >
+		<http:request method="GET" doc:name="ERP API" doc:id="f3d824d8-1a5d-4194-9ec9-3b3a80e14447" url="https://api/*"/>
+	</flow>
+	<flow name="de-cixFlow4" doc:id="16e612e9-7233-4f29-964e-c49c02511301" >
+		<set-payload value="#[payload]" doc:name="ERP Response" doc:id="950a7289-fea4-4849-85a2-e1ade33d2fd6" />
+	</flow>
+	<flow name="de-cixFlow5" doc:id="1ae76e10-188c-4027-9657-d168262a594a" >
+		<http:request method="POST" doc:name="OSS API" doc:id="19dcf98b-e030-48a5-b082-cfcbc582738d" config-ref="HTTP_Request_configuration" url="http://localhost:8084/api/v1/customers" outputMimeType='application/json; authorization="Bearer:"'>
+		</http:request>
+	</flow>
+	<flow name="de-cixFlow6" doc:id="623c11da-6bd1-492d-b941-323a895ff215" >
+		<set-payload value="#[payload]" doc:name="Response from OSS" doc:id="b5c83cb1-1728-436b-9704-935f9593fbfe" />
+	</flow>
+	<flow name="de-cixFlow7" doc:id="bbfc9366-5957-4611-8427-a5eb909ed6ba" >
+		<ee:transform doc:name="Transform Message" doc:id="5af064a6-ede2-4165-8bd0-ed03b3375f04" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="de-cixFlow1" doc:id="5cf5d6c0-e40d-4a1d-8ee6-d5c0bfadd9b8" >
+		<ee:transform doc:name="Transform Message" doc:id="040e64e9-6860-4a7b-ad0f-5e1b406d2c59" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+  external_ref: payload.external_ref as String,
+  id: payload.id as String,
+  name: payload.name as String,
+  parent: payload.parent as String,
+  state: payload.state as String,
+  status: payload.status as Array
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
